@@ -160,12 +160,11 @@ struct NumberField: View {
 
 private struct ActionsSettingsView: View {
     @EnvironmentObject private var model: AppModel
-    @State private var selection: UUID?
 
     var body: some View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
-                List(selection: $selection) {
+                List(selection: $model.selectedActionID) {
                     ForEach(model.settings.actions) { action in
                         ActionRow(action: action)
                             .tag(action.id)
@@ -197,7 +196,7 @@ private struct ActionsSettingsView: View {
                     }
                     .buttonStyle(.borderless)
                     .frame(width: 28)
-                    .disabled(selection == nil)
+                    .disabled(model.selectedActionID == nil)
                     .help("Remove action")
 
                     Spacer()
@@ -208,7 +207,7 @@ private struct ActionsSettingsView: View {
 
             Divider()
 
-            if let id = selection, model.settings.actions.contains(where: { $0.id == id }) {
+            if let id = model.selectedActionID, model.settings.actions.contains(where: { $0.id == id }) {
                 ActionDetailView(action: model.actionBinding(id))
             } else {
                 VStack(spacing: 10) {
@@ -222,20 +221,20 @@ private struct ActionsSettingsView: View {
             }
         }
         .onAppear {
-            if selection == nil { selection = model.settings.actions.first?.id }
+            if model.selectedActionID == nil { model.selectedActionID = model.settings.actions.first?.id }
         }
     }
 
     private func add(_ kind: ActionKind) {
         let action = AutomationAction(kind: kind, parameter: kind.defaultParameter)
         model.settings.actions.append(action)
-        selection = action.id
+        model.selectedActionID = action.id
     }
 
     private func removeSelected() {
-        guard let id = selection, let index = model.settings.actions.firstIndex(where: { $0.id == id }) else { return }
+        guard let id = model.selectedActionID, let index = model.settings.actions.firstIndex(where: { $0.id == id }) else { return }
         model.settings.actions.remove(at: index)
-        selection = model.settings.actions.isEmpty ? nil : model.settings.actions[min(index, model.settings.actions.count - 1)].id
+        model.selectedActionID = model.settings.actions.isEmpty ? nil : model.settings.actions[min(index, model.settings.actions.count - 1)].id
     }
 }
 

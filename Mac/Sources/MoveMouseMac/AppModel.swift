@@ -18,6 +18,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var launchAtLogin = SMAppService.mainApp.status == .enabled
     @Published var errorMessage: String?
     @Published var selectedSection: SettingsSection = .general
+    /// Selected row in Settings > Actions. Kept here rather than in a SwiftUI @State: @State is a macro
+    /// in recent SDKs and fails to build with toolchains that lack the SwiftUI macro plugin.
+    @Published var selectedActionID: UUID?
 
     private let isFirstLaunch: Bool
     /// True when an existing settings file could not be read: it is backed up before the first save.

@@ -47,8 +47,15 @@ final class AppModel: ObservableObject {
         engine.onStateChanged = { [weak self] state in self?.state = state }
         engine.onNextRunChanged = { [weak self] date in self?.nextRun = date }
         engine.onError = { [weak self] message in
-            self?.errorMessage = message
             NSLog("Move Mouse: %@", message)
+            guard let self else { return }
+            // The missing-permission case already has its own (localized) notice with a button:
+            // showing the engine's English message as well would just duplicate it.
+            if message == InputControllerError.accessibilityPermissionRequired.localizedDescription {
+                self.hasAccessibilityAccess = false
+                return
+            }
+            self.errorMessage = message
         }
 
         $settings
@@ -108,6 +115,9 @@ final class AppModel: ObservableObject {
     func refreshPermission() {
         let current = InputController.hasAccessibilityAccess
         if current != hasAccessibilityAccess { hasAccessibilityAccess = current }
+        if current, errorMessage == InputControllerError.accessibilityPermissionRequired.localizedDescription {
+            errorMessage = nil
+        }
     }
 
     func requestAccessibilityAccess() {

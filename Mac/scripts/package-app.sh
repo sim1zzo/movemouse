@@ -36,7 +36,11 @@ iconutil -c icns "$ICONSET_DIR" -o "$APP_BUNDLE/Contents/Resources/MoveMouse.icn
 if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
     codesign --force --deep --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$APP_BUNDLE"
 else
-    echo "SIGNING_IDENTITY is not set; the app will not be Developer ID signed or notarized."
+    # Ad-hoc sign the whole bundle so its identity (bundle ID + Info.plist) is sealed. A bundle whose
+    # binary is only linker-signed can appear enabled in Privacy & Security > Accessibility while
+    # macOS still denies it. Ad-hoc identities change on every build: re-grant access after rebuilding.
+    codesign --force --deep --sign - "$APP_BUNDLE"
+    echo "SIGNING_IDENTITY is not set; the app is ad-hoc signed (not Developer ID signed or notarized)."
 fi
 
 mkdir -p "$BUILD_DIR"

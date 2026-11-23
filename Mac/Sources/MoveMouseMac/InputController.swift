@@ -105,6 +105,9 @@ enum InputController {
                 throw InputControllerError.eventCouldNotBeCreated
             }
             event.post(tap: .cghidEventTap)
+            // Posting all steps at once made the movement instantaneous and invisible (a "square" ends where it
+            // started); a short pause per step makes it a real, perceptible movement.
+            usleep(4_000)
         }
     }
 

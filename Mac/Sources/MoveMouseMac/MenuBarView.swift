@@ -32,7 +32,7 @@ struct MenuBarView: View {
             VStack(spacing: 8) {
                 QuickToggle(title: "Keep Mac awake", symbol: "cup.and.saucer", isOn: $model.settings.keepAwake)
                 QuickToggle(title: "Pause on battery", symbol: "bolt.slash", isOn: $model.settings.pauseOnBattery)
-                QuickToggle(title: "Pause while I use the Mac", symbol: "hand.raised", isOn: $model.settings.autoPause)
+                QuickToggle(title: "Pause while I use the Mac", symbol: "hand.raised", isOn: model.autoPauseBinding)
             }
 
             Divider()

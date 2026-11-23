@@ -95,10 +95,14 @@ private struct GeneralSettingsView: View {
             Section("Behaviour") {
                 Toggle("Keep Mac awake while running", isOn: $model.settings.keepAwake)
                 Toggle("Pause on battery", isOn: $model.settings.pauseOnBattery)
-                Toggle("Pause while I use the Mac", isOn: $model.settings.autoPause)
-                Toggle("Resume automatically when I stop", isOn: $model.settings.autoResume)
-                if model.settings.autoResume {
-                    NumberField(title: "Resume after inactivity", value: $model.settings.autoResumeSeconds, range: 1...86_400, unit: "s")
+                Toggle("Pause while I use the Mac", isOn: model.autoPauseBinding)
+                if model.settings.autoPause {
+                    Toggle("Resume automatically when I stop", isOn: $model.settings.autoResume)
+                        .padding(.leading, 18)
+                    if model.settings.autoResume {
+                        NumberField(title: "Resume after inactivity", value: $model.settings.autoResumeSeconds, range: 1...86_400, unit: "s")
+                            .padding(.leading, 18)
+                    }
                 }
             }
 

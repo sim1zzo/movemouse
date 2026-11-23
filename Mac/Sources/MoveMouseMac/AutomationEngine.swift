@@ -55,6 +55,9 @@ final class AutomationEngine {
         pauseDueToBattery = false
         pauseDueToBlackout = false
         automaticPause = false
+        // Grace period: the user has just touched the mouse/keyboard to press Start. Without this,
+        // auto-pause saw that input on the next 1-second check and stopped the engine immediately.
+        ignoreActivityUntil = Date().addingTimeInterval(5)
         generation += 1
         firstIntervalCycle = true
         intervalExecutionCounts.removeAll()
@@ -186,11 +189,8 @@ final class AutomationEngine {
             CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown)
         )
         if state == .running, settings.autoPause, idleSeconds < 1 {
-            if settings.autoResume {
-                pause(automatically: true)
-            } else {
-                stop()
-            }
+            // Without auto-resume, pause (visible as "Paused", resumable from the menu) instead of a silent stop.
+            pause(automatically: settings.autoResume)
         } else if state == .paused, automaticPause, settings.autoResume,
                   idleSeconds >= Double(max(1, settings.autoResumeSeconds)) {
             automaticPause = false

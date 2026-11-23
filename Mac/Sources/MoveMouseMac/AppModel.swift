@@ -89,6 +89,15 @@ final class AppModel: ObservableObject {
 
     func stop() { engine.stop() }
 
+    /// Turning auto-pause on also turns auto-resume on: auto-pause alone pauses at the first touch of the
+    /// mouse and never resumes, which looks like the app does not work.
+    var autoPauseBinding: Binding<Bool> {
+        Binding(get: { self.settings.autoPause }, set: { enabled in
+            self.settings.autoPause = enabled
+            if enabled { self.settings.autoResume = true }
+        })
+    }
+
     func quit() {
         saveNow()
         engine.stop()

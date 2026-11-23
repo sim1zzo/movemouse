@@ -3,3 +3,6 @@ Move Mouse/bin/
 Move Mouse/obj/
 UWP Package/
 .vs/
+Mac/.build/
+Mac/build/
+.DS_Store

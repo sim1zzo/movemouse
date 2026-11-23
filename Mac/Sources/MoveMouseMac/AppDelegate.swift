@@ -10,8 +10,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
     private var statusItem: NSStatusItem!
 
     private let statusLabel = NSTextField(labelWithString: "Stopped")
-    private let permissionLabel = NSTextField(labelWithString: "")
-    private let errorLabel = NSTextField(labelWithString: "")
+    private let permissionLabel = NSTextField(wrappingLabelWithString: "")
+    private let errorLabel = NSTextField(wrappingLabelWithString: "")
     private let minimumIntervalField = NSTextField(string: "30")
     private let maximumIntervalField = NSTextField(string: "60")
     private let randomIntervalButton = NSButton(checkboxWithTitle: "Random interval", target: nil, action: nil)
@@ -32,7 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
     private let actionRepeatButton = NSButton(checkboxWithTitle: "Repeat on later intervals", target: nil, action: nil)
     private let repeatLimitField = NSTextField(string: "0")
     private let waitForExitButton = NSButton(checkboxWithTitle: "Wait for command", target: nil, action: nil)
-    private let actionHelpLabel = NSTextField(labelWithString: "")
+    private let actionHelpLabel = NSTextField(wrappingLabelWithString: "")
     private let scheduleTable = NSTableView()
     private let scheduleTimeField = NSTextField(string: "09:00")
     private let scheduleWeekdaysField = NSTextField(string: "Sun,Mon,Tue,Wed,Thu,Fri,Sat")
@@ -53,6 +53,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         engine.configure(settings)
         engine.onStateChanged = { [weak self] state in self?.updateState(state) }
         engine.onError = { [weak self] message in self?.showError(message) }
+        buildMainMenu()
         buildWindow()
         buildStatusItem()
         populateControls()
@@ -65,6 +66,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showWindow()
+        return true
+    }
+
+    /// Without a main menu, AppKit has no Edit menu, so Cmd+C/V/X/A/Z do not reach the text fields.
+    private func buildMainMenu() {
+        let mainMenu = NSMenu()
+
+        let appItem = NSMenuItem()
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "Show Move Mouse", action: #selector(showWindow), keyEquivalent: ",").target = self
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "Hide Move Mouse", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "Quit Move Mouse", action: #selector(quit), keyEquivalent: "q").target = self
+        appItem.submenu = appMenu
+        mainMenu.addItem(appItem)
+
+        let editItem = NSMenuItem()
+        let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        let redo = editMenu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "z")
+        redo.keyEquivalentModifierMask = [.command, .shift]
+        editMenu.addItem(.separator())
+        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editItem.submenu = editMenu
+        mainMenu.addItem(editItem)
+
+        let windowItem = NSMenuItem()
+        let windowMenu = NSMenu(title: "Window")
+        windowMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
+        windowMenu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        windowItem.submenu = windowMenu
+        mainMenu.addItem(windowItem)
+
+        NSApp.mainMenu = mainMenu
+        NSApp.windowsMenu = windowMenu
+    }
 
     private func buildWindow() {
         let content = NSStackView()
@@ -80,7 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         content.addArrangedSubview(statusLabel)
 
         permissionLabel.textColor = .secondaryLabelColor
-        permissionLabel.maximumNumberOfLines = 2
+        permissionLabel.preferredMaxLayoutWidth = 480
         content.addArrangedSubview(row([permissionLabel, button("Request Accessibility Access", #selector(requestPermission))]))
         content.addArrangedSubview(row([button("Start / Resume", #selector(startOrResume)), button("Pause", #selector(pause)), button("Stop", #selector(stop))]))
 
@@ -100,8 +144,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         actionEnabledButton.state = .on
         content.addArrangedSubview(row([label("Name"), fixedWidth(actionNameField, 120), label("Trigger"), actionTriggerPopup, actionEnabledButton]))
         content.addArrangedSubview(row([actionRepeatButton, label("Repeat limit (0 = unlimited)"), fixedWidth(repeatLimitField, 60), waitForExitButton]))
-        content.addArrangedSubview(row([label("Parameter"), actionParameterField]))
-        content.addArrangedSubview(row([label("Arguments"), actionArgumentsField, button("Save action", #selector(saveAction)), button("Remove", #selector(removeAction))]))
+        // Editable text fields have no intrinsic width: without an explicit width they can collapse to zero.
+        content.addArrangedSubview(row([label("Parameter"), fixedWidth(actionParameterField, 420)]))
+        content.addArrangedSubview(row([label("Arguments"), fixedWidth(actionArgumentsField, 420), button("Save action", #selector(saveAction)), button("Remove", #selector(removeAction))]))
+        actionHelpLabel.preferredMaxLayoutWidth = 760
         actionHelpLabel.textColor = .secondaryLabelColor
         actionHelpLabel.font = .systemFont(ofSize: 11)
         content.addArrangedSubview(actionHelpLabel)
@@ -127,7 +173,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         ]))
 
         errorLabel.textColor = .systemRed
-        errorLabel.maximumNumberOfLines = 3
+        errorLabel.preferredMaxLayoutWidth = 760
         content.addArrangedSubview(errorLabel)
         let pathLabel = NSTextField(labelWithString: "Settings: \(SettingsStore.settingsURL.path)")
         pathLabel.font = .systemFont(ofSize: 10)
@@ -135,12 +181,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         pathLabel.lineBreakMode = .byTruncatingMiddle
         content.addArrangedSubview(pathLabel)
 
-        let frame = NSRect(x: 0, y: 0, width: 820, height: 850)
+        // The form is taller than many laptop screens: put it in a scroll view so every control stays reachable.
+        content.translatesAutoresizingMaskIntoConstraints = false
+        let documentView = FlippedView()
+        documentView.translatesAutoresizingMaskIntoConstraints = false
+        documentView.addSubview(content)
+        NSLayoutConstraint.activate([
+            content.topAnchor.constraint(equalTo: documentView.topAnchor),
+            content.leadingAnchor.constraint(equalTo: documentView.leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: documentView.trailingAnchor),
+            content.bottomAnchor.constraint(equalTo: documentView.bottomAnchor)
+        ])
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.drawsBackground = false
+        scrollView.documentView = documentView
+        NSLayoutConstraint.activate([
+            documentView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            documentView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor)
+        ])
+
+        let visible = NSScreen.main?.visibleFrame.size ?? NSSize(width: 1280, height: 800)
+        let frame = NSRect(x: 0, y: 0, width: min(840, visible.width - 40), height: min(850, visible.height - 40))
         window = NSWindow(contentRect: frame, styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+        // Programmatic NSWindows default to isReleasedWhenClosed = true: after the first close the window
+        // object is freed and "Show Move Mouse" can no longer bring it back.
+        window.isReleasedWhenClosed = false
         window.title = "Move Mouse"
-        window.minSize = NSSize(width: 750, height: 620)
+        window.minSize = NSSize(width: 480, height: 360)
+        window.contentView = scrollView
         window.center()
-        window.contentView = content
         window.delegate = self
 
         for table in [actionTable, scheduleTable, blackoutTable] {
@@ -159,7 +231,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
 
     private func buildStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.title = "MM"
+        updateStatusIcon(.stopped)
         let menu = NSMenu()
         menu.addItem(withTitle: "Show Move Mouse", action: #selector(showWindow), keyEquivalent: "")
         menu.addItem(withTitle: "Start / Pause", action: #selector(toggleRunState), keyEquivalent: "")
@@ -389,23 +461,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         settings.autoPause = autoPauseButton.state == .on
         settings.autoResume = autoResumeButton.state == .on
         settings.autoResumeSeconds = resumeAfter
+        // A login-item failure (common for unsigned builds or apps not in /Applications) must not
+        // discard every other preference: previously it returned early and nothing was saved.
         let wantsLogin = launchAtLoginButton.state == .on
+        var loginItemError: String?
         do {
             if wantsLogin && SMAppService.mainApp.status != .enabled {
                 try SMAppService.mainApp.register()
             } else if !wantsLogin && SMAppService.mainApp.status == .enabled {
                 try SMAppService.mainApp.unregister()
             }
-            settings.launchAtLogin = wantsLogin
         } catch {
-            showError("Could not update the macOS login item: \(error.localizedDescription)")
-            return
+            loginItemError = "Preferences saved, but the macOS login item could not be updated: \(error.localizedDescription)"
         }
+        settings.launchAtLogin = SMAppService.mainApp.status == .enabled
+        launchAtLoginButton.state = settings.launchAtLogin ? .on : .off
         do {
             try SettingsStore.save(settings)
             engine.configure(settings)
-            clearError()
             statusLabel.stringValue = "\(engine.state.rawValue) — preferences saved"
+            if let loginItemError { showError(loginItemError) } else { clearError() }
         } catch {
             showError("Could not save settings: \(error.localizedDescription)")
         }
@@ -442,8 +517,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
 
     private func updateState(_ state: AutomationEngine.State) {
         statusLabel.stringValue = state.rawValue
-        statusItem.button?.title = state == .running ? "● MM" : state == .paused ? "Ⅱ MM" : "MM"
+        updateStatusIcon(state)
         updatePermissionStatus()
+    }
+
+    private func updateStatusIcon(_ state: AutomationEngine.State) {
+        guard let button = statusItem?.button else { return }
+        let symbolName: String
+        switch state {
+        case .running: symbolName = "computermouse.fill"
+        case .paused: symbolName = "pause.circle"
+        default: symbolName = "computermouse"
+        }
+        if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Move Mouse – \(state.rawValue)") {
+            image.isTemplate = true // adapts to light/dark menu bar
+            button.image = image
+            button.title = ""
+        } else {
+            button.image = nil
+            button.title = state == .running ? "● MM" : state == .paused ? "Ⅱ MM" : "MM"
+        }
+        button.toolTip = "Move Mouse – \(state.rawValue)"
     }
 
     private func helpText(for kind: ActionKind) -> String {
@@ -484,6 +578,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         engine.stop()
         NSApp.terminate(nil)
     }
+}
+
+/// Top-left origin so the scrollable settings form starts at the top.
+final class FlippedView: NSView {
+    override var isFlipped: Bool { true }
 }
 
 @main

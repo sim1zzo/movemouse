@@ -18,9 +18,13 @@ The package script builds a universal Apple Silicon/Intel app and produces `buil
 
 Unsigned builds are intended for local testing. macOS Gatekeeper may warn or block an unsigned download. Do not bypass that warning for an app whose source you do not trust.
 
+## Interface
+
+Move Mouse lives only in the menu bar (no Dock icon). Click its icon for a panel with the current state, Start/Pause/Stop and quick toggles; **Settings…** (⌘,) opens a window with General, Actions, Schedules, Blackouts and Permissions sections. Changes are saved automatically. The interface is available in English and Italian and follows the macOS system language.
+
 ## Permissions
 
-Mouse and keyboard simulation requires **System Settings > Privacy & Security > Accessibility** permission. Use **Request Accessibility Access** in the app, enable Move Mouse in System Settings, then return to the app. Without this permission, mouse and keyboard actions are unavailable; schedules and the system-sleep assertion can still be used.
+Mouse and keyboard simulation requires **System Settings > Privacy & Security > Accessibility** permission. Use **Grant access…** in Settings > Permissions, enable Move Mouse in System Settings, then return to the app. Without this permission, mouse and keyboard actions are unavailable; schedules and the system-sleep assertion can still be used.
 
 ## macOS feature notes
 

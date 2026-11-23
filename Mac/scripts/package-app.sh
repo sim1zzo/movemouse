@@ -19,6 +19,10 @@ INTEL_BIN_DIR="$(swift build --package-path "$MAC_DIR" --scratch-path "$INTEL_BU
 mkdir -p "$APP_BUNDLE/Contents/MacOS" "$APP_BUNDLE/Contents/Resources"
 lipo -create "$ARM_BIN_DIR/MoveMouseMac" "$INTEL_BIN_DIR/MoveMouseMac" -output "$APP_BUNDLE/Contents/MacOS/MoveMouseMac"
 cp "$MAC_DIR/Resources/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
+for lproj in "$MAC_DIR"/Resources/*.lproj; do
+    rm -rf "$APP_BUNDLE/Contents/Resources/$(basename "$lproj")"
+    cp -R "$lproj" "$APP_BUNDLE/Contents/Resources/"
+done
 
 ICONSET_DIR="$BUILD_DIR/MoveMouse.iconset"
 mkdir -p "$ICONSET_DIR"

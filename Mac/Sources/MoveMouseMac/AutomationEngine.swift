@@ -27,6 +27,8 @@ final class AutomationEngine {
 
     var onStateChanged: ((State) -> Void)?
     var onError: ((String) -> Void)?
+    /// Called with the date of the next interval run, or nil when nothing is scheduled.
+    var onNextRunChanged: ((Date?) -> Void)?
 
     func configure(_ settings: AppSettings) {
         self.settings = settings
@@ -103,6 +105,7 @@ final class AutomationEngine {
 
     private func setState(_ newState: State) {
         state = newState
+        if newState != .running { onNextRunChanged?(nil) }
         onStateChanged?(newState)
     }
 
@@ -111,6 +114,7 @@ final class AutomationEngine {
         let lower = max(1, settings.minimumInterval)
         let upper = max(lower, settings.maximumInterval)
         let seconds = settings.randomInterval && upper > lower ? Double(Int.random(in: lower..<upper)) : Double(lower)
+        onNextRunChanged?(Date().addingTimeInterval(seconds))
         intervalTimer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self, self.state == .running else { return }

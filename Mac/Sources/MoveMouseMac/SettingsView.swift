@@ -270,6 +270,7 @@ private struct ActionRow: View {
 }
 
 private struct ActionDetailView: View {
+    @EnvironmentObject private var model: AppModel
     @Binding var action: AutomationAction
 
     var body: some View {
@@ -316,8 +317,49 @@ private struct ActionDetailView: View {
                     }
                 }
             }
+
+            Section {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Button {
+                        model.testAction(action)
+                    } label: {
+                        Label("Test", systemImage: "play.circle")
+                    }
+                    .disabled(model.testingActionID != nil)
+                    testStatus
+                    Spacer(minLength: 0)
+                }
+            } footer: {
+                if action.kind == .clickMouse || action.kind == .keystroke {
+                    Text("Clicks and keystrokes start after 3 seconds, so you can move the pointer or switch app first.")
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
         .formStyle(.grouped)
+    }
+
+    @ViewBuilder
+    private var testStatus: some View {
+        if model.testingActionID == action.id {
+            if model.testCountdown > 0 {
+                Text("Starting in \(model.testCountdown) s…")
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            } else {
+                ProgressView().controlSize(.small)
+            }
+        } else if let result = model.testResult, result.actionID == action.id {
+            Label {
+                Text(result.message)
+                    .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: result.succeeded ? "checkmark.circle.fill" : "xmark.octagon.fill")
+                    .foregroundColor(result.succeeded ? .green : .red)
+            }
+            .font(.callout)
+        }
     }
 
     /// Changing the type resets the parameter to a valid example for the new type.

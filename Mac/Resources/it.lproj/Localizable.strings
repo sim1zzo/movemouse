@@ -89,3 +89,7 @@
 "Without this permission Move Mouse can still keep the Mac awake and follow schedules, but it cannot move the mouse or press keys." = "Senza questo permesso Move Mouse può comunque tenere sveglio il Mac e seguire le pianificazioni, ma non può muovere il mouse né premere tasti.";
 "macOS virtual key codes separated by commas — e.g. 49 for Space." = "Codici tasto virtuali di macOS separati da virgole — es. 49 per Spazio.";
 "next in" = "prossima tra";
+"Test" = "Prova";
+"Action completed." = "Azione eseguita.";
+"Starting in %lld s…" = "Avvio tra %lld s…";
+"Clicks and keystrokes start after 3 seconds, so you can move the pointer or switch app first." = "Clic e pressioni di tasti partono dopo 3 secondi, così puoi prima spostare il puntatore o passare a un'altra app.";

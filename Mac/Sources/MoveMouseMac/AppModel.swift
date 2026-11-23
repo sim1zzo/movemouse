@@ -89,6 +89,50 @@ final class AppModel: ObservableObject {
 
     func stop() { engine.stop() }
 
+    // MARK: - Test a single action
+
+    struct ActionTestResult {
+        let actionID: UUID
+        let succeeded: Bool
+        let message: String
+    }
+
+    @Published private(set) var testingActionID: UUID?
+    @Published private(set) var testCountdown = 0
+    @Published private(set) var testResult: ActionTestResult?
+
+    /// Runs one action immediately, outside the engine. Clicks and keystrokes start after a 3-second
+    /// countdown: otherwise the click would land on the Test button itself (and run the test again),
+    /// and keys would be typed into the settings window.
+    func testAction(_ action: AutomationAction) {
+        guard testingActionID == nil else { return }
+        testingActionID = action.id
+        testResult = nil
+        runTest(action, secondsLeft: [.clickMouse, .keystroke].contains(action.kind) ? 3 : 0)
+    }
+
+    private func runTest(_ action: AutomationAction, secondsLeft: Int) {
+        testCountdown = secondsLeft
+        if secondsLeft > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                self?.runTest(action, secondsLeft: secondsLeft - 1)
+            }
+            return
+        }
+        InputController.execute(action) { [weak self] error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.testingActionID = nil
+                self.testResult = ActionTestResult(
+                    actionID: action.id,
+                    succeeded: error == nil,
+                    message: error?.localizedDescription ?? String(localized: "Action completed.")
+                )
+                self.refreshPermission()
+            }
+        }
+    }
+
     /// Turning auto-pause on also turns auto-resume on: auto-pause alone pauses at the first touch of the
     /// mouse and never resumes, which looks like the app does not work.
     var autoPauseBinding: Binding<Bool> {
